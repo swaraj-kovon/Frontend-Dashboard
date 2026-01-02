@@ -1,0 +1,193 @@
+import { useState, useEffect, useCallback } from "react";
+import { StatCard } from "../components/StatCard";
+import { TotalJobsCard } from "../components/TotalJobsCard";
+import { TopApplicantsCard } from "../components/TopApplicantsCard";
+import { TotalTicketsCard } from "../components/TotalTicketsCard";
+import { TotalFeedsCard } from "../components/TotalFeedsCard";
+import { StatusDistributionCard } from "../components/StatusDistributionCard";
+import { TopJobRolesCard } from "../components/TopJobRolesCard";
+import { EmployerPolicyStatusCard } from "../components/EmployerPolicyStatusCard";
+import { TopApplicantsSummaryCard } from "../components/TopApplicantsSummaryCard";
+import { UserApplicationListCard } from "../components/UserApplicationListCard";
+import { IncompleteProfilesCard } from "../components/IncompleteProfilesCard";
+import { JobsByCompanyCard } from "../components/JobsByCompanyCard";
+import { CompanyPopularityCard } from "../components/CompanyPopularityCard";
+import { JobStatusListCard } from "../components/JobStatusListCard";
+import { CompanyStatusCountsCard } from "../components/CompanyStatusCountsCard";
+import { TopCountriesCard } from "../components/TopCountriesCard";
+import { UserFeedEngagementCard } from "../components/UserFeedEngagementCard";
+import { TopTargetRolesCard } from "../components/TopTargetRolesCard";
+import { TopCommunitiesCard } from "../components/TopCommunitiesCard";
+import { TrendCard } from "../components/TrendCard";
+import { ApplicationStatusTrendCard } from "../components/ApplicationStatusTrendCard";
+import { TopCountriesComparisonCard } from "../components/TopCountriesComparisonCard";
+import { JobsByCompanyComparisonCard } from "../components/JobsByCompanyComparisonCard";
+import { 
+  fetchTotalUsers, 
+  fetchTotalUsersTrend, 
+  fetchTotalJobsTrend, 
+  fetchTotalTicketsTrend, 
+  fetchTotalFeedsTrend 
+} from "../services/insights.api";
+import { Layout } from "../ui/layout";
+
+const LiveIndicator = () => (
+  <div style={{
+    position: "fixed",
+    top: 20,
+    right: 20,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    zIndex: 9999,
+    background: "white",
+    padding: "6px 12px",
+    borderRadius: 20,
+    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+    border: "1px solid #f0f0f0"
+  }}>
+    <style>
+      {`
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+          70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+      `}
+    </style>
+    <div style={{
+      width: 10,
+      height: 10,
+      backgroundColor: "#22c55e",
+      borderRadius: "50%",
+      animation: "pulse 2s infinite"
+    }} />
+    <span style={{ color: "#22c55e", fontWeight: "bold", fontSize: 12, letterSpacing: 1 }}>LIVE</span>
+  </div>
+);
+
+export const Dashboard = () => {
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+
+  const loadInsights = useCallback(async () => {
+    try {
+      const result = await fetchTotalUsers(dateRange);
+      setData(result);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load insights");
+    } finally {
+      setLoading(false);
+    }
+  }, [dateRange]);
+
+  useEffect(() => {
+    loadInsights();
+    const interval = setInterval(loadInsights, 60000);
+    return () => clearInterval(interval);
+  }, [loadInsights]);
+
+  return (
+    <Layout>
+      <LiveIndicator />
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 20, gap: 12, alignItems: "center" }}>
+        <span style={{ fontSize: 14, fontWeight: 500, color: "#666" }}>Date Range:</span>
+        <input 
+          type="date" 
+          value={dateRange.start}
+          onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+          style={{ padding: "8px", borderRadius: 6, border: "1px solid #ddd" }}
+        />
+        <input 
+          type="date" 
+          value={dateRange.end}
+          onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+          style={{ padding: "8px", borderRadius: 6, border: "1px solid #ddd" }}
+        />
+        <button 
+          onClick={() => setDateRange({ start: "", end: "" })}
+          style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: "#22c55e", color: "white", cursor: "pointer", fontWeight: 600, fontSize: 14 }}
+        >
+          Live
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))", gap: "24px" }}>
+        {error && (
+          <div style={{ color: "red", gridColumn: "1/-1" }}>
+            {error} - Check if backend is running on port 4000
+          </div>
+        )}
+        
+        {loading && !data && <div>Loading insights...</div>}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          {data && (
+            <StatCard
+              label={data.label}
+              value={data.value}
+              updatedAt={data.updatedAt}
+            />
+          )}
+          <TrendCard title="Users" fetchData={fetchTotalUsersTrend} dateRange={dateRange} color="#3b82f6" />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <TotalJobsCard dateRange={dateRange} />
+          <TrendCard title="Jobs" fetchData={fetchTotalJobsTrend} dateRange={dateRange} color="#10b981" />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <TotalTicketsCard dateRange={dateRange} />
+          <TrendCard title="Tickets" fetchData={fetchTotalTicketsTrend} dateRange={dateRange} color="#f59e0b" />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <TotalFeedsCard dateRange={dateRange} />
+          <TrendCard title="Feeds" fetchData={fetchTotalFeedsTrend} dateRange={dateRange} color="#8b5cf6" />
+        </div>
+
+        <EmployerPolicyStatusCard dateRange={dateRange} />
+
+        <StatusDistributionCard />
+        
+        <ApplicationStatusTrendCard dateRange={dateRange} />
+
+        <TopApplicantsCard dateRange={dateRange} />
+
+        <TopJobRolesCard dateRange={dateRange} />
+
+        <TopTargetRolesCard dateRange={dateRange} />
+
+        <TopApplicantsSummaryCard dateRange={dateRange} />
+
+        <UserApplicationListCard title="Users Who Applied" filter="applied" dateRange={dateRange} />
+
+        <UserApplicationListCard title="Users Who Have Not Applied" filter="not_applied" dateRange={dateRange} />
+
+        <JobsByCompanyCard dateRange={dateRange} />
+
+        <JobsByCompanyComparisonCard dateRange={dateRange} />
+
+        <CompanyPopularityCard dateRange={dateRange} />
+
+        <JobStatusListCard dateRange={dateRange} />
+
+        <CompanyStatusCountsCard dateRange={dateRange} />
+
+        <TopCountriesCard dateRange={dateRange} />
+
+        <TopCountriesComparisonCard dateRange={dateRange} />
+
+        <UserFeedEngagementCard dateRange={dateRange} />
+
+        <TopCommunitiesCard dateRange={dateRange} />
+
+        <IncompleteProfilesCard dateRange={dateRange} />
+      </div>
+    </Layout>
+  );
+};
