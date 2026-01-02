@@ -118,7 +118,7 @@ export const Dashboard = () => {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(400px, 1fr))", gap: "24px" }}>
         {error && (
           <div style={{ color: "red", gridColumn: "1/-1" }}>
-            {error} - Check if backend is running on port 4000
+            {error} - Check console for CORS or network errors
           </div>
         )}
         
